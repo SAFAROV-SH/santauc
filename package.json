@@ -11,6 +11,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "mysql2": "^3.11.0",
     "node-telegram-bot-api": "^0.66.0"
   }
 }

@@ -1,35 +1,18 @@
 
 const TelegramBot = require('node-telegram-bot-api');
-const mysql = require('mysql2/promise');
 
 // =============================================================
 // SOZLAMALAR — o'zingizga moslang
 // =============================================================
 const CONFIG = {
   // Bot tokeni (config.php dagi BOT_TOKEN bilan bir xil bo'lsin)
-  BOT_TOKEN: '8701078642:AAGGkhmpEWdiaREB28b6W0SVMQQptlbKxno',
-
-  // MySQL ulanishi (config.php dagi qiymatlar bilan BIR XIL bo'lsin)
-  DB: {
-    host: 'localhost',
-    user: 'ucmain_usr',
-    password: 'UcMain08@',
-    database: 'ucmain',
-  },
-
-  // api.php manzili (to'liq URL)
-  API_URL: 'https://connectuz.uz/userbot/api.php',
-
+   BOT_TOKEN: '8701078642:AAGGkhmpEWdiaREB28b6W0SVMQQptlbKxno',
+  // api.php manzili (to'liq URL) — barcha amallar (auth, buy, payment...) shu orqali
+   API_URL: 'https://connectuz.uz/userbot/api.php',
   // "Webda ochish" tugmasi ochadigan Mini App havolasi (O'ZINGIZ KIRITASIZ)
-  WEB_APP_URL: 'https://connectuz.uz/userbot/index.php',
-
-  // Bot username (referral havola uchun, @ belgisiz)
+    WEB_APP_URL: 'https://connectuz.uz/userbot/index.php',
   BOT_USERNAME: 'SantaUcShop_bot',
-
-  // /start bosilganda chiqadigan rasm (URL yoki lokal fayl yo'li)
   START_IMAGE: 'https://connectuz.uz/userbot/images/santa.png',
-
-  // Murojat (support) — username yoki havola
   SUPPORT_USERNAME: '@uc_santa',
 
   // Qo'llanma matni (HTML)
@@ -48,90 +31,11 @@ const CONFIG = {
 // =============================================================
 const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: true });
 
-// =============================================================
-// MySQL — to'g'ridan-to'g'ri ulanish (pool)
-// Toshkent vaqti (+05:00) — web (config.php) bilan bir xil
-// =============================================================
-const pool = mysql.createPool({
-  host: CONFIG.DB.host,
-  user: CONFIG.DB.user,
-  password: CONFIG.DB.password,
-  database: CONFIG.DB.database,
-  charset: 'utf8mb4',
-  timezone: '+05:00',
-  waitForConnections: true,
-  connectionLimit: 5,
-  queueLimit: 0,
-});
-
 // Foydalanuvchi sessiyalari (RAM da). Kalit: telegram user id
 // { chatId, messageId, dbUserId, balance, game, packages, buy, awaiting }
 const sessions = new Map();
 
-// =============================================================
-// DB HELPER — foydalanuvchi bilan ishlash
-// (config.php dagi getOrCreateUser mantig'ining aynan nusxasi)
-// =============================================================
-
-// telegram_id bo'yicha foydalanuvchini topadi (yengil so'rov)
-async function dbGetUser(telegramId) {
-  const [rows] = await pool.execute(
-    'SELECT user_id, balance FROM users WHERE telegram_id = ? LIMIT 1',
-    [telegramId]
-  );
-  return rows[0] || null;
-}
-
-// Foydalanuvchini topadi yoki YARATADI (users jadvaliga saqlaydi)
-async function dbGetOrCreateUser(telegramId, firstName, lastName, username, photoUrl, refUserId) {
-  // 1) Mavjudmi?
-  const [rows] = await pool.execute(
-    'SELECT user_id, balance FROM users WHERE telegram_id = ? LIMIT 1',
-    [telegramId]
-  );
-
-  if (rows.length) {
-    // Ma'lumotlarni yangilaymiz (rasm faqat kelgan bo'lsa — eskisini o'chirmaymiz)
-    if (photoUrl) {
-      await pool.execute(
-        'UPDATE users SET first_name=?, last_name=?, username=?, photo_url=?, updated_at=NOW() WHERE telegram_id=?',
-        [firstName, lastName, username, photoUrl, telegramId]
-      );
-    } else {
-      await pool.execute(
-        'UPDATE users SET first_name=?, last_name=?, username=?, updated_at=NOW() WHERE telegram_id=?',
-        [firstName, lastName, username, telegramId]
-      );
-    }
-    return rows[0];
-  }
-
-  // 2) Yangi user — ref_by ni tekshiramiz (mavjud user_id bo'lsagina)
-  let ref = refUserId || null;
-  if (ref) {
-    const [r] = await pool.execute('SELECT user_id FROM users WHERE user_id = ? LIMIT 1', [ref]);
-    if (!r.length) ref = null;
-  }
-
-  // 3) INSERT
-  try {
-    const [res] = await pool.execute(
-      'INSERT INTO users (telegram_id, first_name, last_name, username, photo_url, ref_by, balance) VALUES (?,?,?,?,?,?,0.00)',
-      [telegramId, firstName, lastName, username, photoUrl || '', ref]
-    );
-    console.log(`👤 Yangi user saqlandi: tg=${telegramId} id=${res.insertId}${ref ? ' ref=' + ref : ''}`);
-    return { user_id: res.insertId, balance: 0 };
-  } catch (e) {
-    // Duplicate (boshqa jarayon yaratgan) — qayta o'qiymiz
-    const [again] = await pool.execute(
-      'SELECT user_id, balance FROM users WHERE telegram_id = ? LIMIT 1',
-      [telegramId]
-    );
-    return again[0] || null;
-  }
-}
-
-// Foydalanuvchining profil rasmini olishga urinadi (ixtiyoriy)
+// Foydalanuvchining profil rasmini olishga urinadi (ixtiyoriy — auth ga uzatiladi)
 async function getPhotoUrl(userId) {
   try {
     const photos = await bot.getUserProfilePhotos(userId, { limit: 1 });
@@ -174,8 +78,10 @@ async function apiCall(action, telegramId, payload = {}) {
   }
 }
 
-// Sessiyani olish yoki yaratish + foydalanuvchini DB ga saqlash
-//   opts.save = true  -> /start: to'liq saqlash (rasm bilan, ref bilan)
+// Sessiyani olish yoki yaratish + foydalanuvchini API orqali saqlash
+// Foydalanuvchi users jadvaliga api.php ('auth' amali) orqali qo'shiladi —
+// web bilan 100% bir xil (getOrCreateUser).
+//   opts.save = true  -> /start: to'liq saqlash (rasm + referral bilan)
 //   opts.ref          -> referral user_id (/start payload)
 async function ensureSession(user, chatId, messageId, opts = {}) {
   let s = sessions.get(user.id);
@@ -186,41 +92,30 @@ async function ensureSession(user, chatId, messageId, opts = {}) {
   if (chatId) s.chatId = chatId;
   if (messageId) s.messageId = messageId;
 
-  try {
-    if (opts.save) {
-      // /start — foydalanuvchini users jadvaliga saqlaymiz (yoki yangilaymiz)
-      const photoUrl = await getPhotoUrl(user.id);
-      const dbUser = await dbGetOrCreateUser(
-        user.id,
-        user.first_name || '',
-        user.last_name || '',
-        user.username || '',
-        photoUrl,
-        opts.ref || null
-      );
-      if (dbUser) { s.dbUserId = dbUser.user_id; s.balance = Number(dbUser.balance); }
-    } else if (!s.dbUserId) {
-      // Callback (bot qayta ishga tushgan bo'lsa) — yengil topish, bo'lmasa yaratish
-      let u = await dbGetUser(user.id);
-      if (!u) {
-        u = await dbGetOrCreateUser(user.id, user.first_name || '', user.last_name || '', user.username || '', '', null);
-      }
-      if (u) { s.dbUserId = u.user_id; s.balance = Number(u.balance); }
+  // /start da yoki user hali aniqlanmagan bo'lsa — api.php 'auth' orqali saqlaymiz
+  if (opts.save || !s.dbUserId) {
+    let photoUrl = '';
+    if (opts.save) photoUrl = await getPhotoUrl(user.id);
+
+    const auth = await apiCall('auth', user.id, {
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      username: user.username || '',
+      photo_url: photoUrl,
+      ref_user_id: opts.ref ? (parseInt(opts.ref) || null) : null,
+    });
+    if (auth.ok) {
+      s.dbUserId = auth.user_id;
+      s.balance = auth.balance;
     }
-  } catch (e) {
-    console.error('[ensureSession/db]', e.message);
   }
   return s;
 }
 
-// Balansni to'g'ridan-to'g'ri DB dan yangilash (haqiqiy manba)
+// Balansni api.php orqali yangilash (web bilan bir xil manba)
 async function refreshBalance(user, s) {
-  try {
-    const u = await dbGetUser(user.id);
-    if (u) s.balance = Number(u.balance);
-  } catch (e) {
-    console.error('[refreshBalance]', e.message);
-  }
+  const r = await apiCall('balance', user.id);
+  if (r.ok) s.balance = r.balance;
   return s.balance;
 }
 
@@ -595,4 +490,3 @@ bot.on('message', async (msg) => {
 // =============================================================
 bot.on('polling_error', (e) => console.error('[polling]', e.code, e.message));
 console.log('🤖 SantaUc bot ishga tushdi (api.php bilan bir tizimda).');
-

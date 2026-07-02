@@ -4,6 +4,13 @@ const TelegramBot = require('node-telegram-bot-api');
 // SOZLAMALAR
 // =============================================================
 const CONFIG = {
+  GAME_STYLES: {
+    1: { style: 'primary', icon_custom_emoji_id: '5204252919565657978' },
+    2: { style: 'success', icon_custom_emoji_id: '5870633910337015697' },
+    // yangi o'yin qo'shsangiz shu yerga yozing:
+    // 3: { style: 'danger', icon_custom_emoji_id: '...' },
+  },
+  
   BOT_TOKEN: '8701078642:AAGGkhmpEWdiaREB28b6W0SVMQQptlbKxno',
   API_URL: 'https://connectuz.uz/userbot/api.php',
   WEB_APP_URL: 'https://connectuz.uz/userbot/index.php',
@@ -155,13 +162,21 @@ async function showGames(user, s) {
   s.awaiting = null;
   const r = await apiCall('games', user.id);
   if (!r.ok || !r.games?.length) {
-    return editUI(s, "🎮 <b>O'yinlar</b>\n\nHozircha o'yin yo'q.", [[{ text: 'Orqaga', callback_data: 'main' }]]);
+    return editUI(s, "🎮 <b>O'yinlar</b>\n\nHozircha o'yin yo'q.", [[{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
   }
   const rows = [];
   for (let i = 0; i < r.games.length; i += 2) {
-    rows.push(r.games.slice(i, i + 2).map(g => ({ text: g.name, callback_data: `game:${g.id}` })));
+    rows.push(r.games.slice(i, i + 2).map(g => {
+      const btn = { text: g.name, callback_data: `game:${g.id}` };
+      const gs = CONFIG.GAME_STYLES[g.id];
+      if (gs) {
+        if (gs.style) btn.style = gs.style;
+        if (gs.icon_custom_emoji_id) btn.icon_custom_emoji_id = gs.icon_custom_emoji_id;
+      }
+      return btn;
+    }));
   }
-  rows.push([{ text: 'Orqaga', callback_data: 'main' }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]);
   return editUI(s, "🎮 <b>O'yinlar</b>\n\nO'yinni tanlang:", rows);
 }
 

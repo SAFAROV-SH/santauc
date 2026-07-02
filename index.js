@@ -130,11 +130,11 @@ function mainMenuKeyboard() {
   return [
     [
       { text: "O'yinlar", callback_data: 'games', style: 'primary', icon_custom_emoji_id: '5226513232549664618' },
-      { text: 'Pul kiritish', callback_data: 'topup', style: 'success', icon_custom_emoji_id: '5870633910337015697' },
+      { text: 'Pul kiritish', callback_data: 'topup', style: 'primary', icon_custom_emoji_id: '5870633910337015697' },
     ],
     [
       { text: 'Hisobim', callback_data: 'account', style: 'primary', icon_custom_emoji_id: '5258204546391351475' },
-      { text: "Qo'llanma", callback_data: 'guide', style: 'success', icon_custom_emoji_id: '6039422865189638057' },
+      { text: "Qo'llanma", callback_data: 'guide', style: 'primary', icon_custom_emoji_id: '6039422865189638057' },
     ],
     [
       { text: 'Murojat', callback_data: 'contact', style: 'primary', icon_custom_emoji_id: '5260535596941582167' },

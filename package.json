@@ -1,0 +1,16 @@
+{
+  "name": "santauc-bot",
+  "version": "1.0.0",
+  "description": "SantaUc Telegram bot — web (mini app) bilan bitta tizimda, api.php orqali ishlaydi",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}

@@ -144,7 +144,7 @@ function mainMenuCaption(user) {
   const name = esc(user.first_name || 'Foydalanuvchi');
   return (
     `<b>'<tg-emoji emoji-id="5397981293512243749">✨</tg-emoji>Assalomu alaykum <a href="${link}">${name}</a></b>\n\n` +
-    `Donat qilish uchun botga hush kelibsiz\n` +
+    `<tg-emoji emoji-id="5461117441612462242">🙂</tg-emoji> O'yinlar chun ideal donat tizimi\n` +
     `Bo'limlarni tanlang:`
   );
 }

@@ -150,7 +150,7 @@ function mainMenuCaption(user) {
 }
 function mainMenuKeyboard() {
   return [
-    [ { text: "🎮 O'yinlar", callback_data: 'games' }, { text: '💳 Pul kiritish', callback_data: 'topup' } ],
+    [ { text: "🎮 O'yinlar", callback_data: 'games' }, { text: '<tg-emoji emoji-id="5258204546391351475">💰</tg-emoji> Pul kiritish', callback_data: 'topup' } ],
     [ { text: '👛 Hisobim', callback_data: 'account' }, { text: "📖 Qo'llanma", callback_data: 'guide' } ],
     [ { text: '✉️ Murojat', callback_data: 'contact' } ],
     [ { text: '🌐 Webda ochish', web_app: { url: CONFIG.WEB_APP_URL } } ],

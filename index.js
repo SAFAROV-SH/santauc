@@ -1,35 +1,36 @@
-// =============================================================
-// SantaUc Telegram Bot — TUGMALI (inline) interfeys
-// Web (mini app) bilan BITTA TIZIM: barcha amallar api.php orqali.
-// Balans, buyurtma, to'lov — hammasi web bilan bir xil bazada.
-//
-// Muhim: inline tugma bosilganda rasm O'CHIRILMAYDI — faqat
-// caption va tugmalar EDIT qilinadi (editMessageCaption).
-// =============================================================
 
 const TelegramBot = require('node-telegram-bot-api');
+const mysql = require('mysql2/promise');
 
 // =============================================================
 // SOZLAMALAR — o'zingizga moslang
 // =============================================================
 const CONFIG = {
   // Bot tokeni (config.php dagi BOT_TOKEN bilan bir xil bo'lsin)
-  BOT_TOKEN: '8677291670:AAG7f0h8IOyx6FSiANlLqo981TKLcE5YZpA',
+  BOT_TOKEN: '8701078642:AAGGkhmpEWdiaREB28b6W0SVMQQptlbKxno',
+
+  // MySQL ulanishi (config.php dagi qiymatlar bilan BIR XIL bo'lsin)
+  DB: {
+    host: 'localhost',
+    user: 'ucmain_usr',
+    password: 'UcMain08@',
+    database: 'ucmain',
+  },
 
   // api.php manzili (to'liq URL)
-  API_URL: 'https://SIZNING-DOMEN.uz/api.php',
+  API_URL: 'https://connectuz.uz/userbot/api.php',
 
   // "Webda ochish" tugmasi ochadigan Mini App havolasi (O'ZINGIZ KIRITASIZ)
-  WEB_APP_URL: 'https://SIZNING-DOMEN.uz/index.php',
+  WEB_APP_URL: 'https://connectuz.uz/userbot/index.php',
 
   // Bot username (referral havola uchun, @ belgisiz)
-  BOT_USERNAME: 'SantaUcBot',
+  BOT_USERNAME: 'SantaUcShop_bot',
 
   // /start bosilganda chiqadigan rasm (URL yoki lokal fayl yo'li)
-  START_IMAGE: 'https://SIZNING-DOMEN.uz/images/welcome.png',
+  START_IMAGE: 'https://connectuz.uz/userbot/images/santa.png',
 
   // Murojat (support) — username yoki havola
-  SUPPORT_USERNAME: '@SantaUc_admin',
+  SUPPORT_USERNAME: '@uc_santa',
 
   // Qo'llanma matni (HTML)
   GUIDE_TEXT:
@@ -47,9 +48,100 @@ const CONFIG = {
 // =============================================================
 const bot = new TelegramBot(CONFIG.BOT_TOKEN, { polling: true });
 
+// =============================================================
+// MySQL — to'g'ridan-to'g'ri ulanish (pool)
+// Toshkent vaqti (+05:00) — web (config.php) bilan bir xil
+// =============================================================
+const pool = mysql.createPool({
+  host: CONFIG.DB.host,
+  user: CONFIG.DB.user,
+  password: CONFIG.DB.password,
+  database: CONFIG.DB.database,
+  charset: 'utf8mb4',
+  timezone: '+05:00',
+  waitForConnections: true,
+  connectionLimit: 5,
+  queueLimit: 0,
+});
+
 // Foydalanuvchi sessiyalari (RAM da). Kalit: telegram user id
 // { chatId, messageId, dbUserId, balance, game, packages, buy, awaiting }
 const sessions = new Map();
+
+// =============================================================
+// DB HELPER — foydalanuvchi bilan ishlash
+// (config.php dagi getOrCreateUser mantig'ining aynan nusxasi)
+// =============================================================
+
+// telegram_id bo'yicha foydalanuvchini topadi (yengil so'rov)
+async function dbGetUser(telegramId) {
+  const [rows] = await pool.execute(
+    'SELECT user_id, balance FROM users WHERE telegram_id = ? LIMIT 1',
+    [telegramId]
+  );
+  return rows[0] || null;
+}
+
+// Foydalanuvchini topadi yoki YARATADI (users jadvaliga saqlaydi)
+async function dbGetOrCreateUser(telegramId, firstName, lastName, username, photoUrl, refUserId) {
+  // 1) Mavjudmi?
+  const [rows] = await pool.execute(
+    'SELECT user_id, balance FROM users WHERE telegram_id = ? LIMIT 1',
+    [telegramId]
+  );
+
+  if (rows.length) {
+    // Ma'lumotlarni yangilaymiz (rasm faqat kelgan bo'lsa — eskisini o'chirmaymiz)
+    if (photoUrl) {
+      await pool.execute(
+        'UPDATE users SET first_name=?, last_name=?, username=?, photo_url=?, updated_at=NOW() WHERE telegram_id=?',
+        [firstName, lastName, username, photoUrl, telegramId]
+      );
+    } else {
+      await pool.execute(
+        'UPDATE users SET first_name=?, last_name=?, username=?, updated_at=NOW() WHERE telegram_id=?',
+        [firstName, lastName, username, telegramId]
+      );
+    }
+    return rows[0];
+  }
+
+  // 2) Yangi user — ref_by ni tekshiramiz (mavjud user_id bo'lsagina)
+  let ref = refUserId || null;
+  if (ref) {
+    const [r] = await pool.execute('SELECT user_id FROM users WHERE user_id = ? LIMIT 1', [ref]);
+    if (!r.length) ref = null;
+  }
+
+  // 3) INSERT
+  try {
+    const [res] = await pool.execute(
+      'INSERT INTO users (telegram_id, first_name, last_name, username, photo_url, ref_by, balance) VALUES (?,?,?,?,?,?,0.00)',
+      [telegramId, firstName, lastName, username, photoUrl || '', ref]
+    );
+    console.log(`👤 Yangi user saqlandi: tg=${telegramId} id=${res.insertId}${ref ? ' ref=' + ref : ''}`);
+    return { user_id: res.insertId, balance: 0 };
+  } catch (e) {
+    // Duplicate (boshqa jarayon yaratgan) — qayta o'qiymiz
+    const [again] = await pool.execute(
+      'SELECT user_id, balance FROM users WHERE telegram_id = ? LIMIT 1',
+      [telegramId]
+    );
+    return again[0] || null;
+  }
+}
+
+// Foydalanuvchining profil rasmini olishga urinadi (ixtiyoriy)
+async function getPhotoUrl(userId) {
+  try {
+    const photos = await bot.getUserProfilePhotos(userId, { limit: 1 });
+    if (photos && photos.total_count > 0) {
+      const fileId = photos.photos[0][0].file_id;
+      return await bot.getFileLink(fileId); // telegram fayl havolasi
+    }
+  } catch (e) { /* rasm yo'q yoki yopiq */ }
+  return '';
+}
 
 // =============================================================
 // YORDAMCHI FUNKSIYALAR
@@ -82,8 +174,10 @@ async function apiCall(action, telegramId, payload = {}) {
   }
 }
 
-// Sessiyani olish yoki yaratish + auth (web dagi auth bilan bir xil)
-async function ensureSession(user, chatId, messageId, startParam = '') {
+// Sessiyani olish yoki yaratish + foydalanuvchini DB ga saqlash
+//   opts.save = true  -> /start: to'liq saqlash (rasm bilan, ref bilan)
+//   opts.ref          -> referral user_id (/start payload)
+async function ensureSession(user, chatId, messageId, opts = {}) {
   let s = sessions.get(user.id);
   if (!s) {
     s = { chatId, messageId, dbUserId: null, balance: 0, game: null, packages: [], buy: null, awaiting: null };
@@ -92,25 +186,41 @@ async function ensureSession(user, chatId, messageId, startParam = '') {
   if (chatId) s.chatId = chatId;
   if (messageId) s.messageId = messageId;
 
-  const refUserId = startParam ? (parseInt(startParam) || null) : null;
-  const auth = await apiCall('auth', user.id, {
-    first_name: user.first_name || '',
-    last_name: user.last_name || '',
-    username: user.username || '',
-    photo_url: '',
-    ref_user_id: refUserId,
-  });
-  if (auth.ok) {
-    s.dbUserId = auth.user_id;
-    s.balance = auth.balance;
+  try {
+    if (opts.save) {
+      // /start — foydalanuvchini users jadvaliga saqlaymiz (yoki yangilaymiz)
+      const photoUrl = await getPhotoUrl(user.id);
+      const dbUser = await dbGetOrCreateUser(
+        user.id,
+        user.first_name || '',
+        user.last_name || '',
+        user.username || '',
+        photoUrl,
+        opts.ref || null
+      );
+      if (dbUser) { s.dbUserId = dbUser.user_id; s.balance = Number(dbUser.balance); }
+    } else if (!s.dbUserId) {
+      // Callback (bot qayta ishga tushgan bo'lsa) — yengil topish, bo'lmasa yaratish
+      let u = await dbGetUser(user.id);
+      if (!u) {
+        u = await dbGetOrCreateUser(user.id, user.first_name || '', user.last_name || '', user.username || '', '', null);
+      }
+      if (u) { s.dbUserId = u.user_id; s.balance = Number(u.balance); }
+    }
+  } catch (e) {
+    console.error('[ensureSession/db]', e.message);
   }
   return s;
 }
 
-// Balansni yangilash
+// Balansni to'g'ridan-to'g'ri DB dan yangilash (haqiqiy manba)
 async function refreshBalance(user, s) {
-  const r = await apiCall('balance', user.id);
-  if (r.ok) s.balance = r.balance;
+  try {
+    const u = await dbGetUser(user.id);
+    if (u) s.balance = Number(u.balance);
+  } catch (e) {
+    console.error('[refreshBalance]', e.message);
+  }
   return s.balance;
 }
 
@@ -352,7 +462,8 @@ bot.onText(/^\/start(?:\s+(.+))?$/, async (msg, match) => {
     });
   }
 
-  await ensureSession(user, chatId, sent.message_id, startParam);
+  // Foydalanuvchini users jadvaliga saqlaymiz (rasm + referral bilan)
+  await ensureSession(user, chatId, sent.message_id, { save: true, ref: startParam });
 });
 
 // =============================================================
@@ -484,3 +595,4 @@ bot.on('message', async (msg) => {
 // =============================================================
 bot.on('polling_error', (e) => console.error('[polling]', e.code, e.message));
 console.log('🤖 SantaUc bot ishga tushdi (api.php bilan bir tizimda).');
+

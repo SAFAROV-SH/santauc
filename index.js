@@ -155,26 +155,26 @@ async function showGames(user, s) {
   s.awaiting = null;
   const r = await apiCall('games', user.id);
   if (!r.ok || !r.games?.length) {
-    return editUI(s, "🎮 <b>O'yinlar</b>\n\nHozircha o'yin yo'q.", [[{ text: '⬅️ Orqaga', callback_data: 'main' }]]);
+    return editUI(s, "🎮 <b>O'yinlar</b>\n\nHozircha o'yin yo'q.", [[{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
   }
   const rows = [];
   for (let i = 0; i < r.games.length; i += 2) {
     rows.push(r.games.slice(i, i + 2).map(g => ({ text: g.name, callback_data: `game:${g.id}` })));
   }
-  rows.push([{ text: '⬅️ Orqaga', callback_data: 'main' }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]);
   return editUI(s, "🎮 <b>O'yinlar</b>\n\nO'yinni tanlang:", rows);
 }
 
 async function showPackages(user, s, gameId) {
   s.awaiting = null;
   const r = await apiCall('packages', user.id, { game_id: gameId });
-  if (!r.ok) return editUI(s, '❌ Paketlar yuklanmadi.', [[{ text: '⬅️ Orqaga', callback_data: 'games' }]]);
+  if (!r.ok) return editUI(s, '❌ Paketlar yuklanmadi.', [[{ text: 'Orqaga', callback_data: 'games', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
 
   s.game = r.game;
   s.packages = r.packages || [];
 
   if (!s.packages.length) {
-    return editUI(s, `🎮 <b>${esc(r.game.name)}</b>\n\nBu o'yinda paket yo'q.`, [[{ text: '⬅️ Orqaga', callback_data: 'games' }]]);
+    return editUI(s, `🎮 <b>${esc(r.game.name)}</b>\n\nBu o'yinda paket yo'q.`, [[{ text: 'Orqaga', callback_data: 'games', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
   }
 
   const cur = r.game.currency;
@@ -182,7 +182,7 @@ async function showPackages(user, s, gameId) {
     text: `${fmt(p.amount)} ${cur} — ${fmt(p.price)} so'm${p.is_popular ? ' ⭐' : ''}`,
     callback_data: `pkg:${p.id}`,
   }]));
-  rows.push([{ text: '⬅️ Orqaga', callback_data: 'games' }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'game , style: 'danger', icon_custom_emoji_id: '5258236805890710909'}]);
   return editUI(s, `🎮 <b>${esc(r.game.name)}</b>\n\nPaketni tanlang:`, rows);
 }
 
@@ -205,7 +205,7 @@ async function selectPackage(user, s, pkgId) {
       `Hisobingizni to'ldiring.`,
       [
         [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success' }],
-        [{ text: 'Orqaga', callback_data: `game:${s.game.id}` }],
+        [{ text: 'Orqaga', callback_data: `game:${s.game.id}`, style: 'danger', icon_custom_emoji_id: '5258236805890710909' }],
       ]
     );
   }
@@ -229,7 +229,7 @@ async function showTopup(user, s) {
     rows.push(amounts.slice(i, i + 2).map(a => ({ text: `${fmt(a)} so'm`, callback_data: `amt:${a}`, style: 'success' })));
   }
   rows.push([{ text: 'Boshqa summa', callback_data: 'amt_custom', style: 'primary' }]);
-  rows.push([{ text: '⬅️ Orqaga', callback_data: 'main' }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]);
   return editUI(
     s,
     `💳 <b>Pul kiritish</b>\n\nSummani tanlang yoki o'zingiz kiriting.\n<i>Minimal: 1 000 so'm</i>`,
@@ -240,11 +240,11 @@ async function showTopup(user, s) {
 async function createPayment(user, s, amount) {
   s.awaiting = null;
   if (!amount || amount < 1000) {
-    return editUI(s, "⚠️ Minimal summa 1 000 so'm.", [[{ text: '⬅️ Orqaga', callback_data: 'topup' }]]);
+    return editUI(s, "⚠️ Minimal summa 1 000 so'm.", [[{ text: 'Orqaga', callback_data: 'topup', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
   }
   const r = await apiCall('create_payment', user.id, { amount });
   if (!r.ok) {
-    return editUI(s, `❌ Xatolik: ${esc(r.error || '')}`, [[{ text: '⬅️ Orqaga', callback_data: 'topup' }]]);
+    return editUI(s, `❌ Xatolik: ${esc(r.error || '')}`, [[{ text: 'Orqaga', callback_data: 'topup', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
   }
 
   let ttl = '15 daqiqa';
@@ -262,7 +262,7 @@ async function createPayment(user, s, amount) {
     [
       [{ text: 'To\'ladim', callback_data: 'paid', style: 'success' }],
       [{ text: 'Balansni tekshirish', callback_data: 'account', style: 'primary' }],
-      [{ text: 'Orqaga', callback_data: 'main' }],
+      [{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }],
     ]
   );
 }
@@ -290,14 +290,14 @@ async function showAccount(user, s) {
     [
       [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success' }],
       [{ text: 'Havolani ulashish', url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('SantaUc — arzon donat!')}`, style: 'primary' }],
-      [{ text: 'Orqaga', callback_data: 'main' }],
+      [{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }],
     ]
   );
 }
 
 function showGuide(s) {
   s.awaiting = null;
-  return editUI(s, CONFIG.GUIDE_TEXT, [[{ text: '⬅️ Orqaga', callback_data: 'main' }]]);
+  return editUI(s, CONFIG.GUIDE_TEXT, [[{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
 }
 
 function showContact(s) {
@@ -308,7 +308,7 @@ function showContact(s) {
     `✉️ <b>Murojat</b>\n\nSavol yoki muammo bo'lsa, admin bilan bog'laning:\n👉 ${esc(CONFIG.SUPPORT_USERNAME)}`,
     [
       [{ text: 'Adminga yozish', url: `https://t.me/${uname}`, style: 'primary' }],
-      [{ text: 'Orqaga', callback_data: 'main' }],
+      [{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }],
     ]
   );
 }
@@ -352,7 +352,7 @@ const HANDLERS = {
   amt_custom: (_u, s) => {
     s.awaiting = 'amount';
     return editUI(s, "✏️ <b>Summa kiriting</b>\n\nTo'ldirmoqchi bo'lgan summangizni yuboring (so'mda).\n<i>Minimal: 1 000</i>",
-      [[{ text: '⬅️ Orqaga', callback_data: 'topup' }]]);
+      [[{ text: 'Orqaga', callback_data: 'topup', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
   },
 };
 
@@ -417,7 +417,7 @@ bot.on('message', async (msg) => {
     const val = parseInt(text.replace(/\D/g, ''));
     if (!val || val < 1000) {
       return editUI(s, "⚠️ Noto'g'ri summa. Minimal 1 000 so'm.\n\nQaytadan yuboring:",
-        [[{ text: '⬅️ Orqaga', callback_data: 'topup' }]]);
+        [[{ text: 'Orqaga', callback_data: 'topup', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
     }
     return createPayment(user, s, val);
   }
@@ -458,7 +458,7 @@ bot.on('message', async (msg) => {
         order_failed: 'Buyurtma yaratilmadi',
       };
       return editUI(s, `❌ ${esc(map[r.error] || r.error || 'Xatolik')}`,
-        [[{ text: '⬅️ Orqaga', callback_data: `game:${s.game.id}` }]]);
+        [[{ text: 'Orqaga', callback_data: `game:${s.game.id}`, style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]]);
     }
 
     s.balance = r.new_balance;

@@ -182,7 +182,7 @@ async function showPackages(user, s, gameId) {
     text: `${fmt(p.amount)} ${cur} — ${fmt(p.price)} so'm${p.is_popular ? ' ⭐' : ''}`,
     callback_data: `pkg:${p.id}`,
   }]));
-  rows.push([{ text: 'Orqaga', callback_data: 'game  }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'game',  }]);
   return editUI(s, `🎮 <b>${esc(r.game.name)}</b>\n\nPaketni tanlang:`, rows);
 }
 

@@ -128,10 +128,20 @@ function mainMenuCaption(user) {
 }
 function mainMenuKeyboard() {
   return [
-    [{ text: "🎮 O'yinlar", callback_data: 'games' }, { text: ' Pul kiritish', callback_data: 'topup' }],
-    [{ text: '👛 Hisobim', callback_data: 'account' }, { text: "📖 Qo'llanma", callback_data: 'guide' }],
-    [{ text: '✉️ Murojat', callback_data: 'contact' }],
-    [{ text: '🌐 Webda ochish', web_app: { url: CONFIG.WEB_APP_URL } }],
+    [
+      { text: "O'yinlar", callback_data: 'games', style: 'primary', icon_custom_emoji_id: '5368324170671202286' },
+      { text: 'Pul kiritish', callback_data: 'topup', style: 'success', icon_custom_emoji_id: '5870633910337015697' },
+    ],
+    [
+      { text: 'Hisobim', callback_data: 'account', style: 'primary', icon_custom_emoji_id: '5373141891321699086' },
+      { text: "Qo'llanma", callback_data: 'guide', style: 'success', icon_custom_emoji_id: '6039422865189638057' },
+    ],
+    [
+      { text: 'Murojat', callback_data: 'contact', style: 'danger', icon_custom_emoji_id: '5870657884844462243' },
+    ],
+    [
+      { text: 'Webda ochish', web_app: { url: CONFIG.WEB_APP_URL }, style: 'primary' },
+    ],
   ];
 }
 
@@ -194,8 +204,8 @@ async function selectPackage(user, s, pkgId) {
       `Balansingiz: <b>${fmt(s.balance)} so'm</b>\n\n` +
       `Hisobingizni to'ldiring.`,
       [
-        [{ text: '💳 Pul kiritish', callback_data: 'topup' }],
-        [{ text: '⬅️ Orqaga', callback_data: `game:${s.game.id}` }],
+        [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success' }],
+        [{ text: 'Orqaga', callback_data: `game:${s.game.id}` }],
       ]
     );
   }
@@ -216,9 +226,9 @@ async function showTopup(user, s) {
   const amounts = [10000, 20000, 50000, 100000];
   const rows = [];
   for (let i = 0; i < amounts.length; i += 2) {
-    rows.push(amounts.slice(i, i + 2).map(a => ({ text: `${fmt(a)} so'm`, callback_data: `amt:${a}` })));
+    rows.push(amounts.slice(i, i + 2).map(a => ({ text: `${fmt(a)} so'm`, callback_data: `amt:${a}`, style: 'success' })));
   }
-  rows.push([{ text: '✏️ Boshqa summa', callback_data: 'amt_custom' }]);
+  rows.push([{ text: 'Boshqa summa', callback_data: 'amt_custom', style: 'primary' }]);
   rows.push([{ text: '⬅️ Orqaga', callback_data: 'main' }]);
   return editUI(
     s,
@@ -250,9 +260,9 @@ async function createPayment(user, s, amount) {
     `⏳ Amal qiladi: <b>${ttl}</b>\n\n` +
     `❗️ Aynan <b>${fmt(r.exact_amount)} so'm</b> yuboring — 1 daqiqada avtomatik tushadi.`,
     [
-      [{ text: '✅ To\'ladim', callback_data: 'paid' }],
-      [{ text: '🔄 Balansni tekshirish', callback_data: 'account' }],
-      [{ text: '⬅️ Orqaga', callback_data: 'main' }],
+      [{ text: 'To\'ladim', callback_data: 'paid', style: 'success' }],
+      [{ text: 'Balansni tekshirish', callback_data: 'account', style: 'primary' }],
+      [{ text: 'Orqaga', callback_data: 'main' }],
     ]
   );
 }
@@ -278,9 +288,9 @@ async function showAccount(user, s) {
     s,
     `👛 <b>Hisobim</b>\n\n💰 Balans: <b>${fmt(s.balance)} so'm</b>${refBlock}`,
     [
-      [{ text: '💳 Pul kiritish', callback_data: 'topup' }],
-      [{ text: '📤 Havolani ulashish', url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('SantaUc — arzon donat!')}` }],
-      [{ text: '⬅️ Orqaga', callback_data: 'main' }],
+      [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success' }],
+      [{ text: 'Havolani ulashish', url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('SantaUc — arzon donat!')}`, style: 'primary' }],
+      [{ text: 'Orqaga', callback_data: 'main' }],
     ]
   );
 }
@@ -297,8 +307,8 @@ function showContact(s) {
     s,
     `✉️ <b>Murojat</b>\n\nSavol yoki muammo bo'lsa, admin bilan bog'laning:\n👉 ${esc(CONFIG.SUPPORT_USERNAME)}`,
     [
-      [{ text: '💬 Adminga yozish', url: `https://t.me/${uname}` }],
-      [{ text: '⬅️ Orqaga', callback_data: 'main' }],
+      [{ text: 'Adminga yozish', url: `https://t.me/${uname}`, style: 'primary' }],
+      [{ text: 'Orqaga', callback_data: 'main' }],
     ]
   );
 }
@@ -463,8 +473,8 @@ bot.on('message', async (msg) => {
       `💰 Yangi balans: <b>${fmt(s.balance)} so'm</b>\n\n` +
       `Buyurtmangiz tez orada bajariladi.`,
       [
-        [{ text: "🎮 Yana sotib olish", callback_data: `game:${s.game.id}` }],
-        [{ text: '🏠 Asosiy menyu', callback_data: 'main' }],
+        [{ text: "Yana sotib olish", callback_data: `game:${s.game.id}`, style: 'success' }],
+        [{ text: 'Asosiy menyu', callback_data: 'main', style: 'primary' }],
       ]
     );
   }

@@ -129,15 +129,15 @@ function mainMenuCaption(user) {
 function mainMenuKeyboard() {
   return [
     [
-      { text: "O'yinlar", callback_data: 'games', style: 'primary', icon_custom_emoji_id: '5368324170671202286' },
+      { text: "O'yinlar", callback_data: 'games', style: 'primary', icon_custom_emoji_id: '5226513232549664618' },
       { text: 'Pul kiritish', callback_data: 'topup', style: 'success', icon_custom_emoji_id: '5870633910337015697' },
     ],
     [
-      { text: 'Hisobim', callback_data: 'account', style: 'primary', icon_custom_emoji_id: '5373141891321699086' },
+      { text: 'Hisobim', callback_data: 'account', style: 'primary', icon_custom_emoji_id: '5258204546391351475' },
       { text: "Qo'llanma", callback_data: 'guide', style: 'success', icon_custom_emoji_id: '6039422865189638057' },
     ],
     [
-      { text: 'Murojat', callback_data: 'contact', style: 'danger', icon_custom_emoji_id: '5870657884844462243' },
+      { text: 'Murojat', callback_data: 'contact', style: 'primary', icon_custom_emoji_id: '5260535596941582167' },
     ],
     [
       { text: 'Webda ochish', web_app: { url: CONFIG.WEB_APP_URL }, style: 'primary' },

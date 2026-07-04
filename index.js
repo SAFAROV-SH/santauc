@@ -219,8 +219,8 @@ async function selectPackage(user, s, pkgId) {
       `Balansingiz: <b>${fmt(s.balance)} so'm</b>\n\n` +
       `Hisobingizni to'ldiring.`,
       [
-        [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success' }],
-        [{ text: 'Orqaga', callback_data: `game:${s.game.id}`  }],
+        [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success', icon_custom_emoji_id: '5258204546391351475' }],
+        [{ text: 'Orqaga', callback_data: `game:${s.game.id}`, style: 'danger', icon_custom_emoji_id: '5258236805890710909'   }],
       ]
     );
   }
@@ -244,7 +244,7 @@ async function showTopup(user, s) {
     rows.push(amounts.slice(i, i + 2).map(a => ({ text: `${fmt(a)} so'm`, callback_data: `amt:${a}`, style: 'success' })));
   }
   rows.push([{ text: 'Boshqa summa', callback_data: 'amt_custom', style: 'primary' }]);
-  rows.push([{ text: 'Orqaga', callback_data: 'main' }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909' }]);
   return editUI(
     s,
     `💳 <b>Pul kiritish</b>\n\nSummani tanlang yoki o'zingiz kiriting.\n<i>Minimal: 1 000 so'm</i>`,
@@ -305,7 +305,7 @@ async function showAccount(user, s) {
     [
       [{ text: 'Pul kiritish', callback_data: 'topup', style: 'success' }],
       [{ text: 'Havolani ulashish', url: `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('SantaUc — arzon donat!')}`, style: 'primary' }],
-      [{ text: 'Orqaga', callback_data: 'main'  }],
+      [{ text: 'Orqaga', callback_data: 'main', style: 'danger', icon_custom_emoji_id: '5258236805890710909'  }],
     ]
   );
 }

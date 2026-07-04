@@ -197,7 +197,7 @@ async function showPackages(user, s, gameId) {
     text: `${fmt(p.amount)} ${cur} — ${fmt(p.price)} so'm${p.is_popular ? '' : ''}`,
     callback_data: `pkg:${p.id}`, style: 'primary', icon_custom_emoji_id: '5224542568410268366'
   }]));
-  rows.push([{ text: 'Orqaga', callback_data: 'game', style: 'danger', icon_custom_emoji_id: '5258236805890710909'  }]);
+  rows.push([{ text: 'Orqaga', callback_data: 'games', style: 'danger', icon_custom_emoji_id: '5258236805890710909'  }]);
   return editUI(s, `🎮 <b>${esc(r.game.name)}</b>\n\nPaketni tanlang:`, rows);
 }
 

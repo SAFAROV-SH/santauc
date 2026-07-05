@@ -17,6 +17,7 @@ const CONFIG = {
   BOT_USERNAME: 'SantaUcShop_bot',
   START_IMAGE: 'https://connectuz.uz/userbot/images/santa.png',
   SUPPORT_USERNAME: '@uc_santa',
+  DEFAULT_PLAYER_NICK: 'SantaUc', // nik foydalanuvchidan so'ralmaydi, shu qiymat avto yuboriladi
   GUIDE_TEXT:
     "<b>📖 Qo'llanma</b>\n\n" +
     "1️⃣ <b>O'yinlar</b> — o'yinni va paketni tanlab, ID va nik kiriting.\n" +
@@ -437,24 +438,10 @@ bot.on('message', async (msg) => {
     return createPayment(user, s, val);
   }
 
-  // ---- Player ID ----
+  // ---- Player ID → nik so'ramasdan darhol buyurtma ----
   if (s.awaiting === 'player_id') {
     s.buy.player_id = text;
-    s.awaiting = 'player_nick';
-    const cur = s.game?.currency || '';
-    return editUI(
-      s,
-      `🎮 <b>${esc(s.game.name)}</b>\n` +
-      `Paket: <b>${fmt(s.buy.pkg.amount)} ${cur}</b>\n` +
-      `🆔 ID: <b>${esc(text)}</b>\n\n` +
-      `👤 <b>Nik (taxallus)</b> yuboring:`,
-      [[{ text: '❌ Bekor qilish', callback_data: `game:${s.game.id}` }]]
-    );
-  }
-
-  // ---- Player nick → buy ----
-  if (s.awaiting === 'player_nick') {
-    s.buy.player_nick = text;
+    s.buy.player_nick = CONFIG.DEFAULT_PLAYER_NICK; // nik foydalanuvchidan so'ralmaydi
     s.awaiting = null;
 
     const r = await apiCall('buy', user.id, {
@@ -479,12 +466,12 @@ bot.on('message', async (msg) => {
     s.balance = r.new_balance;
     const cur = s.game?.currency || '';
     const pkg = s.buy.pkg;
-    const nick = s.buy.player_nick;
+    const playerId = s.buy.player_id;
     s.buy = null;
     return editUI(
       s,
       `✅ <b>Muvaffaqiyatli!</b>\n\n` +
-      `<b>${fmt(pkg.amount)} ${cur}</b> — @${esc(nick)} akkauntiga yuborildi.\n` +
+      `<b>${fmt(pkg.amount)} ${cur}</b> — <b>${esc(playerId)}</b> ID ga yuborildi.\n` +
       `💰 Yangi balans: <b>${fmt(s.balance)} so'm</b>\n\n` +
       `Buyurtmangiz tez orada bajariladi.`,
       [
